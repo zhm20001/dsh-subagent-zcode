@@ -1,50 +1,60 @@
 /**
- * Profile-named zcode subagent plugin: registers the `zcode` provider on
- * `ctx.subagents`, the package job index on `ctx.zcodeJobs`, and the
- * `zcode_dispatch` model tool. Every contribution is an effect of this
- * plugin fiber; disposing it unregisters the provider, the tools, the
- * controller, and the index.
+ * DSH Subagent Swarm Plugin entry point.
+ * Integrates Cordis microkernel plugin with detached task execution and DispatchDock Web UI.
  * @module @deepseek-ai/dsh-subagent-zcode
  */
 
-import type { Context } from '@deepseek-ai/cordis'
-import { createBillingGuard } from './billing.ts'
-import { Config, resolveConfig } from './config.ts'
-import { ZcodeJobIndex } from './job-index.ts'
-import { registerZcodeNoticeListener } from './notice.ts'
-import { ZcodeProvider } from './provider.ts'
-import { registerZcodeTools } from './tools.ts'
+import type { DshContext, DshAgent } from './types/dsh.ts';
+import { registerSwarmTools } from './tools.ts';
+import { defaultWatcher } from './watcher.ts';
+import { startServer } from './server.ts';
 
-export const name = 'subagent-zcode'
-export const inject = ['subagents', 'subprocess', 'tools', 'jobs']
-export { Config }
+export const name = 'subagent-swarm';
+export const inject = ['tools'];
 
-declare module '@deepseek-ai/dsh-jobs' {
-  interface JobKindMap {
-    /** One zcode CLI child process, dispatch or `--resume` round. */
-    zcode: 'zcode'
-  }
-}
+let activeServer: any = null;
+let currentAgent: DshAgent | undefined = undefined;
 
-declare module '@deepseek-ai/cordis' {
-  interface Context {
-    /** This package's zcode task records and concurrency ledger. */
-    zcodeJobs: ZcodeJobIndex
-  }
+/**
+ * DSH Plugin apply hook.
+ */
+export function apply(ctx: DshContext, _config?: any): void {
+  // Register tools on ctx.tools
+  registerSwarmTools(ctx, () => currentAgent);
+
+  // When a task finishes in .swarm-runs/, notify active DSH agent if present
+  defaultWatcher.subscribe((meta, report) => {
+    if (currentAgent && currentAgent.inject) {
+      try {
+        currentAgent.inject({
+          type: 'text',
+          text: `[Swarm Notice] Task ${meta.taskId} (${meta.ticket || 'NO-TICKET'}) finished with status: ${meta.status}.\n\n${report}`,
+        });
+      } catch (err) {
+        ctx.logger?.warn?.('[Swarm] Failed to inject completion notice to agent:', err);
+      }
+    }
+  });
+
+  // Start HTTP / SSE Web workspace
+  startServer(3000).then((server) => {
+    activeServer = server;
+  }).catch((err) => {
+    ctx.logger?.error?.('[Swarm] Failed to start web server:', err);
+  });
 }
 
 /**
- * Register one zcode subagent composition.
- * @param ctx - context carrying the subagent registry, subprocess seam, tool
- * registry, and job registry.
- * @param config - the deployment config; validated here, at load.
+ * Dispose hook for DSH microkernel reloads.
  */
-export function apply(ctx: Context, config: Config): void {
-  const resolved = resolveConfig(config)
-  ctx.jobs.attachController('subagent-zcode')
-  const index = new ZcodeJobIndex(ctx, resolved.maxConcurrent)
-  const billing = createBillingGuard(resolved.zcodeDbPath, resolved.expectedProviderIds)
-  ctx.subagents.registerProvider(new ZcodeProvider(ctx, resolved))
-  registerZcodeNoticeListener(ctx, resolved, index)
-  registerZcodeTools(ctx, resolved, index, billing)
+export function dispose(): void {
+  if (activeServer) {
+    try {
+      activeServer.close();
+    } catch {}
+    activeServer = null;
+  }
+  defaultWatcher.stop();
 }
+
+export default { name, apply, dispose };
