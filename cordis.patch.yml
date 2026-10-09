@@ -1,0 +1,6 @@
+# Optional Profile Bundle: register the zcode provider on the Host plane only.
+# The package's own `zcode_dispatch`/`zcode_followup` tools register with it;
+# Agent Presets can additionally grant a tool-subagent row targeting the provider.
+- insert:
+    - id: subagent-zcode
+      name: '@deepseek-ai/dsh-subagent-zcode'
