@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { GitCommit, RefreshCw, FileText } from 'lucide-react';
 import type { DiffData } from '../types.ts';
+import { translations, type Language } from '../i18n.ts';
 
 interface DiffViewProps {
   taskId: string;
+  lang: Language;
 }
 
-export const DiffView: React.FC<DiffViewProps> = ({ taskId }) => {
+export const DiffView: React.FC<DiffViewProps> = ({ taskId, lang }) => {
+  const t = translations[lang];
   const [diffData, setDiffData] = useState<DiffData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -32,7 +35,7 @@ export const DiffView: React.FC<DiffViewProps> = ({ taskId }) => {
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/60 text-zinc-400">
         <div className="flex items-center gap-2">
           <GitCommit className="h-4 w-4 text-emerald-400" />
-          <span className="font-semibold text-zinc-300">Git Diff (Working Tree Changes)</span>
+          <span className="font-semibold text-zinc-300">{t.gitDiffTitle}</span>
         </div>
         <button
           onClick={fetchDiff}
@@ -40,7 +43,7 @@ export const DiffView: React.FC<DiffViewProps> = ({ taskId }) => {
           className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Diff</span>
+          <span>{t.refreshDiff}</span>
         </button>
       </div>
 
@@ -49,7 +52,7 @@ export const DiffView: React.FC<DiffViewProps> = ({ taskId }) => {
           <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300">
             <div className="text-[11px] font-semibold text-zinc-400 mb-1 flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Status Summary:</span>
+              <span>{t.statusSummary}</span>
             </div>
             <pre className="text-zinc-300 text-xs">{diffData.status}</pre>
           </div>
@@ -57,10 +60,10 @@ export const DiffView: React.FC<DiffViewProps> = ({ taskId }) => {
 
         <div className="p-4 rounded-lg bg-zinc-900/80 border border-zinc-800">
           <div className="text-[11px] font-semibold text-zinc-400 mb-2 border-b border-zinc-800 pb-1.5">
-            Diff Output:
+            {t.diffOutput}
           </div>
           <pre className="overflow-x-auto text-xs leading-relaxed">
-            {diffData?.diff.split('\n').map((line, idx) => {
+            {(diffData?.diff || t.noChangesFound).split('\n').map((line, idx) => {
               let lineStyle = 'text-zinc-300';
               if (line.startsWith('+') && !line.startsWith('+++')) {
                 lineStyle = 'text-emerald-400 bg-emerald-950/30 -mx-4 px-4 block';

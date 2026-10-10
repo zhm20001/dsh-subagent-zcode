@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, FileCheck, GitCommit, Code2, Ban, Play, RefreshCw, Folder } from 'lucide-react';
+import { Terminal, FileCheck, GitCommit, Code2, Ban, RefreshCw, Folder } from 'lucide-react';
 import type { Task, TaskDetailData } from '../types.ts';
+import { translations, type Language } from '../i18n.ts';
 import { TerminalView } from './TerminalView.tsx';
 import { ReportView } from './ReportView.tsx';
 import { DiffView } from './DiffView.tsx';
@@ -8,11 +9,13 @@ import { DiffView } from './DiffView.tsx';
 interface TaskDetailProps {
   task: Task;
   onRefresh: () => void;
+  lang: Language;
 }
 
 type TabType = 'terminal' | 'report' | 'diff' | 'json';
 
-export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
+export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh, lang }) => {
+  const t = translations[lang];
   const [activeTab, setActiveTab] = useState<TabType>('terminal');
   const [detailData, setDetailData] = useState<TaskDetailData | null>(null);
   const [isKilling, setIsKilling] = useState<boolean>(false);
@@ -34,7 +37,8 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
   }, [task.taskId]);
 
   const handleKill = async () => {
-    if (!confirm(`Are you sure you want to kill task ${task.taskId} (PID: ${task.pid})?`)) return;
+    const confirmMsg = t.confirmKill.replace('{taskId}', task.taskId).replace('{pid}', String(task.pid || ''));
+    if (!confirm(confirmMsg)) return;
     setIsKilling(true);
     try {
       await fetch(`/api/tasks/${task.taskId}/kill`, { method: 'POST' });
@@ -66,7 +70,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
                 <Folder className="h-3 w-3 text-zinc-500" />
                 <span className="truncate max-w-xs">{currentTask.cwd}</span>
               </span>
-              {currentTask.pid && <span>• PID {currentTask.pid}</span>}
+              {currentTask.pid && <span>• {t.pid} {currentTask.pid}</span>}
             </div>
           </div>
         </div>
@@ -79,7 +83,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-medium transition-all"
             >
               <Ban className="h-3.5 w-3.5" />
-              <span>{isKilling ? 'Killing...' : 'Kill Process'}</span>
+              <span>{isKilling ? t.killing : t.killProcess}</span>
             </button>
           )}
 
@@ -88,7 +92,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
               fetchDetail();
               onRefresh();
             }}
-            title="Refresh detail"
+            title={t.refreshDetail}
             className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -107,7 +111,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
           }`}
         >
           <Terminal className="h-3.5 w-3.5" />
-          <span>Live Terminal</span>
+          <span>{t.tabTerminal}</span>
         </button>
 
         <button
@@ -119,7 +123,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
           }`}
         >
           <FileCheck className="h-3.5 w-3.5" />
-          <span>Execution Report</span>
+          <span>{t.tabReport}</span>
         </button>
 
         <button
@@ -131,7 +135,7 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
           }`}
         >
           <GitCommit className="h-3.5 w-3.5" />
-          <span>Git Diff</span>
+          <span>{t.tabDiff}</span>
         </button>
 
         <button
@@ -143,17 +147,17 @@ export const TaskDetail: React.FC<TaskDetailProps> = ({ task, onRefresh }) => {
           }`}
         >
           <Code2 className="h-3.5 w-3.5" />
-          <span>meta.json</span>
+          <span>{t.tabJson}</span>
         </button>
       </div>
 
       {/* Active Tab View */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'terminal' && (
-          <TerminalView taskId={currentTask.taskId} isLive={currentTask.status === 'RUNNING'} />
+          <TerminalView taskId={currentTask.taskId} isLive={currentTask.status === 'RUNNING'} lang={lang} />
         )}
-        {activeTab === 'report' && <ReportView task={currentTask} />}
-        {activeTab === 'diff' && <DiffView taskId={currentTask.taskId} />}
+        {activeTab === 'report' && <ReportView task={currentTask} lang={lang} />}
+        {activeTab === 'diff' && <DiffView taskId={currentTask.taskId} lang={lang} />}
         {activeTab === 'json' && (
           <div className="h-full p-4 overflow-y-auto bg-zinc-950 font-mono text-xs">
             <pre className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 text-indigo-300">

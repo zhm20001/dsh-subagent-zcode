@@ -1,18 +1,22 @@
 import React, { useState } from 'react';
-import { Search, Clock, Cpu, CheckCircle, XCircle, AlertTriangle, Radio, Ban } from 'lucide-react';
+import { Search, Clock, Cpu, CheckCircle, XCircle, AlertTriangle, Ban } from 'lucide-react';
 import type { Task, TaskStatus } from '../types.ts';
+import { translations, type Language } from '../i18n.ts';
 
 interface TaskTimelineProps {
   tasks: Task[];
   selectedTaskId: string | null;
   onSelectTask: (taskId: string) => void;
+  lang: Language;
 }
 
 export const TaskTimeline: React.FC<TaskTimelineProps> = ({
   tasks,
   selectedTaskId,
   onSelectTask,
+  lang,
 }) => {
+  const t = translations[lang];
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
@@ -38,28 +42,28 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
         return (
           <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-            RUNNING
+            {t.statusRunning}
           </span>
         );
       case 'COMPLETED':
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
             <CheckCircle className="h-3 w-3" />
-            COMPLETED
+            {t.statusCompleted}
           </span>
         );
       case 'TIMEOUT_KILLED':
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
             <AlertTriangle className="h-3 w-3" />
-            TIMEOUT
+            {t.statusTimeout}
           </span>
         );
       case 'KILLED':
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-500/10 text-zinc-400 border border-zinc-700/50">
             <Ban className="h-3 w-3" />
-            KILLED
+            {t.statusKilled}
           </span>
         );
       case 'FAILED':
@@ -67,7 +71,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
         return (
           <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
             <XCircle className="h-3 w-3" />
-            FAILED
+            {t.statusFailed}
           </span>
         );
     }
@@ -82,6 +86,13 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
     return `${min}m ${sec}s`;
   };
 
+  const filterLabels: Record<string, string> = {
+    ALL: t.allFilter,
+    RUNNING: t.runningFilter,
+    COMPLETED: t.completedFilter,
+    FAILED: t.failedFilter,
+  };
+
   return (
     <div className="flex flex-col h-full bg-zinc-900/50 border-r border-zinc-800">
       <div className="p-3.5 border-b border-zinc-800 space-y-2.5">
@@ -89,7 +100,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
           <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
             type="text"
-            placeholder="Filter tasks, tickets, prompts..."
+            placeholder={t.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
@@ -107,7 +118,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
               }`}
             >
-              {filter}
+              {filterLabels[filter]}
             </button>
           ))}
         </div>
@@ -117,7 +128,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
         {filteredTasks.length === 0 ? (
           <div className="p-8 text-center text-zinc-500 text-xs">
             <Cpu className="h-8 w-8 mx-auto mb-2 text-zinc-600 stroke-[1.5]" />
-            No tasks found. Click "Dispatch Subagent" to start one.
+            {t.noTasksFound}
           </div>
         ) : (
           filteredTasks.map((task) => {
@@ -156,7 +167,7 @@ export const TaskTimeline: React.FC<TaskTimelineProps> = ({
                       {task.adapter}
                     </span>
                     {task.pid && (
-                      <span className="text-zinc-500">PID: {task.pid}</span>
+                      <span className="text-zinc-500">{t.pid}: {task.pid}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">

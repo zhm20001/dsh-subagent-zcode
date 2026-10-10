@@ -48,6 +48,7 @@ export class ZCodeAdapter implements WorkerAdapter {
     const env: NodeJS.ProcessEnv = { ...process.env };
     if (this.cliPath === FIXTURE_ZCODE) {
       env.FAKE_ZCODE_BEHAVIOR = 'ok';
+      env.FAKE_ZCODE_DELAY_MS = process.env.FAKE_ZCODE_DELAY_MS || '2500';
       env.FAKE_ZCODE_RESPONSE = `ZCode task processed: "${spec.prompt.slice(0, 50)}..."`;
     }
 

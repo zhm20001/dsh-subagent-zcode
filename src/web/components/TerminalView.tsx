@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Terminal as TerminalIcon, Copy, Check, ArrowDown, Download, Radio } from 'lucide-react';
+import { Terminal as TerminalIcon, Copy, Check, ArrowDown, Download } from 'lucide-react';
+import { translations, type Language } from '../i18n.ts';
 
 interface TerminalViewProps {
   taskId: string;
   isLive: boolean;
+  lang: Language;
 }
 
-export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive }) => {
-  const [logs, setLogs] = useState<string>('Connecting to execution log stream...\n');
+export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive, lang }) => {
+  const t = translations[lang];
+  const [logs, setLogs] = useState<string>(t.connectingStream);
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
   const [streamActive, setStreamActive] = useState<boolean>(false);
@@ -75,11 +78,11 @@ export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive }) =>
           {streamActive ? (
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE SSE STREAM
+              {t.liveSseStream}
             </span>
           ) : (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500">
-              STREAM CLOSED
+              {t.streamClosed}
             </span>
           )}
         </div>
@@ -92,7 +95,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive }) =>
             }`}
           >
             <ArrowDown className="h-3 w-3" />
-            <span>Auto-scroll</span>
+            <span>{t.autoScroll}</span>
           </button>
 
           <button
@@ -100,13 +103,13 @@ export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive }) =>
             className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <span>{copied ? t.copied : t.copy}</span>
           </button>
 
           <button
             onClick={handleDownload}
             className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            title="Download log"
+            title={t.downloadLog}
           >
             <Download className="h-3.5 w-3.5" />
           </button>
@@ -114,7 +117,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({ taskId, isLive }) =>
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto leading-relaxed whitespace-pre-wrap select-text text-zinc-300">
-        {logs || <span className="text-zinc-600">Waiting for subagent stdout...</span>}
+        {logs || <span className="text-zinc-600">{t.waitingStdout}</span>}
         <div ref={terminalEndRef} />
       </div>
     </div>
